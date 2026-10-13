@@ -13,12 +13,12 @@ import {
 import type { Boards } from '../lib/challenge'
 import { ONLINE } from '../lib/online'
 import { missingSeedCards, pickNext, progressFor, type AppState, type Scope, type Settings } from '../lib/store'
-import { playSound, SOUND_EVENTS, SOUND_LABELS, type SoundEvent, type SoundSettings } from '../lib/sound'
 import { LEVEL_HELP, LEVEL_NAMES, type Level } from '../lib/text'
 import { Challenge } from './Challenge'
 import { FragBars } from './FragBars'
 import { ClockIcon, FlameIcon, PauseIcon, PencilIcon, PlayIcon, PlusIcon } from './icons'
 import { MarkerCycle } from './MarkerCycle'
+import { SettingsPanel } from './SettingsPanel'
 
 const LADDER: { level: Level; sample: string }[] = [
   { level: 1, sample: 'el dato personal' },
@@ -96,14 +96,6 @@ export function Home({
   const today = state.days[dayKey(now)] ?? 0
   const next = pickNext(state, { kind: 'all' }, now)
   const nextRow = rows.find((r) => r.card.id === next?.id)
-  const sound = state.settings.sound
-
-  /** Saves the change and plays a sample, so every control can be judged by ear. */
-  const setSound = (patch: Partial<SoundSettings>, sample: SoundEvent) => {
-    const updated = { ...sound, ...patch }
-    onSettings({ sound: updated })
-    playSound(sample, updated)
-  }
 
   useEffect(() => {
     if (locked) return
@@ -257,56 +249,16 @@ export function Home({
         </section>
       )}
 
-      <section className="sound" aria-label="Sonido">
-        <div className="sound__main">
-          <label className="switch">
-            <input type="checkbox" checked={sound.enabled} onChange={(e) => setSound({ enabled: e.target.checked }, 'word')} />
-            <span>Efectos de sonido</span>
-          </label>
-          <label className="sound__volume">
-            <span>Volumen</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              step={5}
-              value={Math.round(sound.volume * 100)}
-              disabled={!sound.enabled}
-              onChange={(e) => setSound({ volume: Number(e.target.value) / 100 }, 'word')}
-            />
-          </label>
-        </div>
-        <div className="sound__events">
-          {SOUND_EVENTS.map((event) => (
-            <label key={event} className="switch">
-              <input
-                type="checkbox"
-                checked={sound.events[event]}
-                disabled={!sound.enabled}
-                onChange={(e) => setSound({ events: { ...sound.events, [event]: e.target.checked } }, event)}
-              />
-              <span>{SOUND_LABELS[event]}</span>
-            </label>
-          ))}
-        </div>
-      </section>
-
       <footer className="home__foot">
-        <label className="switch">
-          <input
-            type="checkbox"
-            checked={state.settings.strictAccents}
-            onChange={(e) => onSettings({ strictAccents: e.target.checked })}
-          />
-          <span>Exigir tildes al escribir</span>
-        </label>
+        <span>El progreso se guarda en este navegador.</span>
         {missing.length > 0 && (
           <button className="btn" onClick={onRestore} title={missing.map((c) => `${c.title} (${c.source})`).join(', ')}>
             Restaurar {missing.length} {missing.length === 1 ? 'tarjeta borrada' : 'tarjetas borradas'}
           </button>
         )}
-        <span>El progreso se guarda en este navegador.</span>
       </footer>
+
+      <SettingsPanel settings={state.settings} onSettings={onSettings} />
     </div>
   )
 }

@@ -1,9 +1,66 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { Boards } from '../lib/challenge'
-import type { Player, Rank } from '../lib/online'
+import type { Board, Player, Rank } from '../lib/online'
+import { Marker, useMarkerCycle } from './MarkerCycle'
 
 const TOP = 10
 const MIN_PASSWORD = 4
+/** how long each ranking stays on screen before the next one takes over */
+const HOLD_MS = 5000
+
+type Metric = 'points' | 'mastered' | 'passes'
+
+const BOARDS: { id: Board; title: string; hint: string }[] = [
+  { id: 'base', title: 'Global', hint: 'tarjetas base' },
+  { id: 'community', title: 'Comunidad', hint: 'tarjetas compartidas' },
+]
+
+const METRICS: { id: Metric; tab: string; word: string }[] = [
+  { id: 'points', tab: 'Puntos', word: 'puntos' },
+  { id: 'mastered', tab: 'De memoria', word: 'tarjetas de memoria' },
+  { id: 'passes', tab: 'Pasadas', word: 'pasadas' },
+]
+
+interface Slide {
+  key: string
+  board: (typeof BOARDS)[number]
+  metric: (typeof METRICS)[number]
+  rows: { rank: Rank; place: number }[]
+  max: number
+}
+
+/** One ranking per board and figure, leaving out the ones nobody has a number for yet. */
+function buildSlides(boards: Boards | null, me?: string): Slide[] {
+  if (!boards) return []
+  const slides: Slide[] = []
+  for (const board of BOARDS) {
+    for (const metric of METRICS) {
+      const ranked = boards[board.id]
+        .filter((r) => metric.id === 'points' || r[metric.id] > 0)
+        // the server already sorts by points, which also breaks ties in the other figures
+        .sort((a, b) => b[metric.id] - a[metric.id])
+        .map((rank, i) => ({ rank, place: i + 1 }))
+      if (!ranked.length) continue
+      const rows = ranked.slice(0, TOP)
+      // whoever is outside the top still gets to see where they stand
+      const mine = ranked.findIndex((r) => r.rank.nick === me)
+      if (mine >= TOP) rows.push(ranked[mine])
+      slides.push({ key: `${board.id}:${metric.id}`, board, metric, rows, max: ranked[0].rank[metric.id] || 1 })
+    }
+  }
+  return slides
+}
+
+function detail(rank: Rank, metric: Metric): string {
+  const parts: Record<Metric, string> = {
+    points: `${rank.points} pts`,
+    mastered: `${rank.mastered} de memoria`,
+    passes: `${rank.passes} ${rank.passes === 1 ? 'pasada' : 'pasadas'}`,
+  }
+  return METRICS.filter((m) => m.id !== metric)
+    .map((m) => parts[m.id])
+    .join(' · ')
+}
 
 interface Props {
   player: Player | null
@@ -77,44 +134,91 @@ export function Challenge({ player, boards, error, onJoin, onLeave }: Props) {
         </p>
       )}
 
-      <div className="challenge__boards">
-        <BoardList title="Global" hint="Tarjetas base" ranks={boards?.base} me={player?.nick} />
-        <BoardList title="Comunidad" hint="Tarjetas compartidas" ranks={boards?.community} me={player?.nick} />
-      </div>
+      <Leaderboard boards={boards} me={player?.nick} />
     </section>
   )
 }
 
-function BoardList({ title, hint, ranks, me }: { title: string; hint: string; ranks?: Rank[]; me?: string }) {
-  const mine = ranks?.findIndex((r) => r.nick === me) ?? -1
-  const rows = (ranks ?? []).map((rank, i) => ({ rank, place: i + 1 }))
-  const shown = rows.slice(0, TOP)
-  // whoever is outside the top still gets to see where they stand
-  if (mine >= TOP) shown.push(rows[mine])
+/** A single ranking that rotates through every board and figure there is data for. */
+function Leaderboard({ boards, me }: { boards: Boards | null; me?: string }) {
+  const slides = useMemo(() => buildSlides(boards, me), [boards, me])
+  const [hovered, setHovered] = useState(false)
+  const [focused, setFocused] = useState(false)
+  const paused = hovered || focused
+  const { index, covered, jump } = useMarkerCycle(slides.length, { hold: HOLD_MS, paused })
+  const slide = slides[index]
+
+  if (!slide) {
+    return <p className="board__empty">{boards ? 'Todavía sin puntajes. Entra al reto y entrena para abrir el ranking.' : 'Cargando…'}</p>
+  }
+
+  // the tallest ranking sets the height, so the page below does not jump on every change
+  const tallest = Math.max(...slides.map((s) => s.rows.length))
 
   return (
-    <div className="board">
-      <h3>
-        {title} <span>{hint}</span>
-      </h3>
-      {!ranks ? (
-        <p className="board__empty">Cargando…</p>
-      ) : !shown.length ? (
-        <p className="board__empty">Todavía sin puntajes.</p>
-      ) : (
-        <ol>
-          {shown.map(({ rank, place }) => (
-            <li key={rank.nick} className={rank.nick === me ? 'is-me' : undefined}>
-              <span className="board__place">{place}</span>
-              <span className="board__nick">{rank.nick}</span>
-              <span className="board__detail">
-                {rank.mastered} de memoria · {rank.passes} {rank.passes === 1 ? 'pasada' : 'pasadas'}
-              </span>
-              <strong>{rank.points}</strong>
-            </li>
-          ))}
-        </ol>
-      )}
+    <div
+      className={`board ${covered ? 'is-swapping' : ''} ${paused ? 'is-paused' : ''}`}
+      data-metric={slide.metric.id}
+      style={{ '--hold': `${HOLD_MS}ms`, '--rows': tallest } as React.CSSProperties}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+    >
+      <div className="board__head">
+        <div>
+          <h3>
+            Ranking por <Marker word={slide.metric.word} covered={covered} />
+          </h3>
+          <p className="board__scope">
+            {slide.board.title} · {slide.board.hint}
+          </p>
+        </div>
+        {slides.length > 1 && (
+          <div className="board__tabs" role="group" aria-label="Elegir ranking">
+            {BOARDS.map((board) => {
+              const own = slides.map((s, at) => ({ s, at })).filter(({ s }) => s.board === board)
+              if (!own.length) return null
+              return (
+                <div key={board.id}>
+                  <span>{board.title}</span>
+                  {own.map(({ s, at }) => (
+                    <button
+                      key={s.key}
+                      className={`board__tab ${at === index ? 'is-active' : ''}`}
+                      aria-pressed={at === index}
+                      aria-label={`${s.metric.tab}, ${board.title}`}
+                      onClick={() => jump(at)}
+                    >
+                      {s.metric.tab}
+                      <i aria-hidden="true" />
+                    </button>
+                  ))}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      <ol className="board__list" key={slide.key}>
+        {slide.rows.map(({ rank, place }, i) => (
+          <li
+            key={rank.nick}
+            className={`board__row ${rank.nick === me ? 'is-me' : ''} ${place === 1 ? 'is-first' : ''}`}
+            style={{ '--i': i, '--share': rank[slide.metric.id] / slide.max } as React.CSSProperties}
+          >
+            <i className="board__bar" aria-hidden="true" />
+            <span className="board__place">{place}</span>
+            <span className="board__nick">
+              {rank.nick}
+              {rank.nick === me && <span className="tag tag--author">tú</span>}
+            </span>
+            <span className="board__detail">{detail(rank, slide.metric.id)}</span>
+            <strong>{rank[slide.metric.id]}</strong>
+          </li>
+        ))}
+      </ol>
     </div>
   )
 }

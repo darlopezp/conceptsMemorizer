@@ -94,6 +94,16 @@ export const VolumeOffIcon = (p: P) => (
     <path d="m22 9-6 6M16 9l6 6" />
   </Icon>
 )
+export const SlidersIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4" />
+  </Icon>
+)
+export const ChevronUpIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="m18 15-6-6-6 6" />
+  </Icon>
+)
 export const ClockIcon =(p: P) => (
   <Icon {...p}>
     <circle cx="12" cy="12" r="10" />
