@@ -1,7 +1,7 @@
 import { dayKey, type CardProgress } from './progress'
 
 /** characters a player must have typed before their averages are steady enough to rank */
-export const RANK_MIN_TYPED = 500
+export const RANK_MIN_TYPED = 150
 
 const DAY = 24 * 60 * 60 * 1000
 
