@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { Card } from '../data/seed'
+import { SEED_CARDS, type Card } from '../data/seed'
 import { LEVEL_NAMES, splitFragments, type Level } from '../lib/text'
 import { TrashIcon, XIcon } from './icons'
 
 interface Props {
   card: Card | null
   groups: string[]
+  /** nickname in the challenge; without one there is nobody to credit a shared card to */
+  me: string | null
   onSave: (card: Card, startLevel?: Level) => void
   onDelete: (id: string) => void
   onClose: () => void
@@ -13,13 +15,15 @@ interface Props {
 
 const LEVELS: Level[] = [1, 2, 3, 4, 5, 6]
 
-export function CardEditor({ card, groups, onSave, onDelete, onClose }: Props) {
+export function CardEditor({ card, groups, me, onSave, onDelete, onClose }: Props) {
   const [title, setTitle] = useState(card?.title ?? '')
   const [source, setSource] = useState(card?.source ?? '')
   const [group, setGroup] = useState(card?.group ?? groups[0] ?? '')
   const [text, setText] = useState(card?.text ?? '')
   const [level, setLevel] = useState<Level | 0>(card ? 0 : 1)
   const [confirming, setConfirming] = useState(false)
+  const canShare = me !== null && !SEED_CARDS.some((s) => s.id === card?.id)
+  const [shared, setShared] = useState(card ? card.author !== undefined : true)
   const fragments = useMemo(() => splitFragments(text), [text])
   const valid = title.trim() && fragments.length > 0
 
@@ -34,12 +38,13 @@ export function CardEditor({ card, groups, onSave, onDelete, onClose }: Props) {
     if (!valid) return
     onSave(
       {
-        id: card?.id ?? `card-${Date.now().toString(36)}`,
+        id: card?.id ?? `card-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
         title: title.trim(),
         source: source.trim(),
         group: group.trim() || 'Sin grupo',
         text: text.trim(),
         paused: card?.paused,
+        author: canShare && shared ? me : undefined,
       },
       level || undefined,
     )
@@ -112,6 +117,13 @@ export function CardEditor({ card, groups, onSave, onDelete, onClose }: Props) {
           </select>
           {card && <small>Si cambias el texto, el progreso vuelve al nivel 1.</small>}
         </label>
+
+        {canShare && (
+          <label className="switch">
+            <input type="checkbox" checked={shared} onChange={(e) => setShared(e.target.checked)} />
+            <span>Compartir en Comunidad: todos la verán, con tu apodo</span>
+          </label>
+        )}
 
         <footer className="modal__foot">
           {card &&

@@ -10,9 +10,12 @@ import {
   type CardProgress,
   type CardStatus,
 } from '../lib/progress'
+import type { Boards } from '../lib/challenge'
+import { ONLINE } from '../lib/online'
 import { missingSeedCards, pickNext, progressFor, type AppState, type Scope, type Settings } from '../lib/store'
 import { playSound, SOUND_EVENTS, SOUND_LABELS, type SoundEvent, type SoundSettings } from '../lib/sound'
 import { LEVEL_HELP, LEVEL_NAMES, type Level } from '../lib/text'
+import { Challenge } from './Challenge'
 import { FragBars } from './FragBars'
 import { ClockIcon, FlameIcon, PauseIcon, PencilIcon, PlayIcon, PlusIcon } from './icons'
 import { MarkerCycle } from './MarkerCycle'
@@ -33,6 +36,10 @@ interface Props {
   onTogglePaused: (id: string) => void
   onSettings: (patch: Partial<Settings>) => void
   onRestore: () => void
+  boards: Boards | null
+  challengeError: string | null
+  onJoin: (nick: string, password: string) => Promise<boolean>
+  onLeave: () => void
   locked: boolean
 }
 
@@ -47,7 +54,19 @@ function statusLabel(status: CardStatus, p: CardProgress, now: number): string {
   return `Nivel ${level} · ${LEVEL_NAMES[level]}`
 }
 
-export function Home({ state, onTrain, onEdit, onTogglePaused, onSettings, onRestore, locked }: Props) {
+export function Home({
+  state,
+  onTrain,
+  onEdit,
+  onTogglePaused,
+  onSettings,
+  onRestore,
+  boards,
+  challengeError,
+  onJoin,
+  onLeave,
+  locked,
+}: Props) {
   const now = Date.now()
   const rows = useMemo(
     () =>
@@ -60,9 +79,13 @@ export function Home({ state, onTrain, onEdit, onTogglePaused, onSettings, onRes
   )
   const groups = useMemo(() => {
     const map = new Map<string, typeof rows>()
-    for (const row of rows) map.set(row.card.group, [...(map.get(row.card.group) ?? []), row])
+    for (const row of rows) {
+      if (!row.card.author) map.set(row.card.group, [...(map.get(row.card.group) ?? []), row])
+    }
     return [...map.entries()]
   }, [rows])
+  const community = rows.filter((r) => r.card.author)
+  const me = state.player?.nick
 
   const active = rows.filter((r) => !r.card.paused)
   const overall = active.length ? active.reduce((acc, r) => acc + mastery(r.progress), 0) / active.length : 0
@@ -91,6 +114,48 @@ export function Home({ state, onTrain, onEdit, onTogglePaused, onSettings, onRes
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [locked, onTrain])
+
+  const deck = (items: typeof rows) => (
+    <ul className="deck">
+      {items.map(({ card, progress, status }) => (
+        <li key={card.id} className={`row is-${status} ${card.paused ? 'is-paused' : ''}`}>
+          <button className="row__main" onClick={() => onTrain({ kind: 'card', id: card.id })}>
+            <span className="row__title">
+              {card.title}
+              {card.source && <span className="tag">{card.source}</span>}
+              {card.author && <span className="tag tag--author">por {card.author}</span>}
+            </span>
+            <FragBars frags={progress.frags} done={progress.due !== null} />
+            <span className="row__status">
+              {status === 'due' && <ClockIcon size={14} />}
+              {card.paused ? 'En pausa' : statusLabel(status, progress, now)}
+            </span>
+          </button>
+          <button
+            className="icon-btn"
+            onClick={() => onTogglePaused(card.id)}
+            aria-pressed={!!card.paused}
+            aria-label={card.paused ? `Reanudar ${card.title}` : `Pausar ${card.title}`}
+            title={card.paused ? 'Reanudar: vuelve a aparecer al entrenar' : 'Pausar: no aparece al entrenar'}
+          >
+            {card.paused ? <PlayIcon size={16} /> : <PauseIcon size={16} />}
+          </button>
+          {!card.author || card.author === me ? (
+            <button
+              className="icon-btn"
+              onClick={() => onEdit(card)}
+              aria-label={`Editar ${card.title}`}
+              title="Editar"
+            >
+              <PencilIcon size={16} />
+            </button>
+          ) : (
+            <span className="row__gap" />
+          )}
+        </li>
+      ))}
+    </ul>
+  )
 
   return (
     <div className="home">
@@ -157,6 +222,8 @@ export function Home({ state, onTrain, onEdit, onTogglePaused, onSettings, onRes
         </dl>
       </header>
 
+      {ONLINE && <Challenge player={state.player} boards={boards} error={challengeError} onJoin={onJoin} onLeave={onLeave} />}
+
       <section className="ladder" aria-label="Los seis niveles">
         {LADDER.map(({ level, sample }) => (
           <div key={level} className="ladder__step">
@@ -176,42 +243,19 @@ export function Home({ state, onTrain, onEdit, onTogglePaused, onSettings, onRes
               <PlayIcon size={14} /> Entrenar grupo
             </button>
           </header>
-          <ul className="deck">
-            {items.map(({ card, progress, status }) => (
-              <li key={card.id} className={`row is-${status} ${card.paused ? 'is-paused' : ''}`}>
-                <button className="row__main" onClick={() => onTrain({ kind: 'card', id: card.id })}>
-                  <span className="row__title">
-                    {card.title}
-                    {card.source && <span className="tag">{card.source}</span>}
-                  </span>
-                  <FragBars frags={progress.frags} done={progress.due !== null} />
-                  <span className="row__status">
-                    {status === 'due' && <ClockIcon size={14} />}
-                    {card.paused ? 'En pausa' : statusLabel(status, progress, now)}
-                  </span>
-                </button>
-                <button
-                  className="icon-btn"
-                  onClick={() => onTogglePaused(card.id)}
-                  aria-pressed={!!card.paused}
-                  aria-label={card.paused ? `Reanudar ${card.title}` : `Pausar ${card.title}`}
-                  title={card.paused ? 'Reanudar' : 'Pausar: no aparece al entrenar'}
-                >
-                  {card.paused ? <PlayIcon size={16} /> : <PauseIcon size={16} />}
-                </button>
-                <button
-                  className="icon-btn"
-                  onClick={() => onEdit(card)}
-                  aria-label={`Editar ${card.title}`}
-                  title="Editar"
-                >
-                  <PencilIcon size={16} />
-                </button>
-              </li>
-            ))}
-          </ul>
+          {deck(items)}
         </section>
       ))}
+
+      {community.length > 0 && (
+        <section className="group">
+          <header className="group__head">
+            <h2>Comunidad</h2>
+            <span className="group__hint">Reanuda las que quieras sumar a tu entrenamiento</span>
+          </header>
+          {deck(community)}
+        </section>
+      )}
 
       <section className="sound" aria-label="Sonido">
         <div className="sound__main">

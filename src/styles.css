@@ -610,6 +610,166 @@ kbd {
   margin-left: -6px;
 }
 
+.row__gap {
+  width: 40px;
+}
+
+.tag--author {
+  border-color: rgba(199, 0, 239, 0.45);
+  color: var(--marker-soft);
+}
+
+.group__hint {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.challenge {
+  margin-bottom: 48px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.challenge__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+
+.challenge__head h2 {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.challenge__head p {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.challenge__head .pill strong {
+  color: var(--text);
+}
+
+.challenge__me {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.challenge__join {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.challenge__join small {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: right;
+}
+
+.challenge__join input {
+  width: 160px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  font-size: 16px;
+}
+
+.challenge__error {
+  margin-top: 12px;
+  color: var(--err);
+  font-size: 14px;
+}
+
+.challenge__boards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.board h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.board h3 span,
+.board__empty {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.board__empty {
+  margin-top: 10px;
+}
+
+.board ol {
+  margin-top: 8px;
+}
+
+.board li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto 48px;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.board li + li {
+  border-top: 1px solid var(--line);
+}
+
+.board li.is-me {
+  border-top-color: transparent;
+  background: rgba(199, 0, 239, 0.16);
+}
+
+.board__place {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.board__nick {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board__detail {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.board li strong {
+  font-size: 17px;
+  text-align: right;
+}
+
+@media (max-width: 860px) {
+  .challenge__boards {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---------- trainer ---------- */
 
 .trainer {

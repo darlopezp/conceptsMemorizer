@@ -3,7 +3,9 @@ import { CardEditor } from './components/CardEditor'
 import { Home } from './components/Home'
 import { Trainer } from './components/Trainer'
 import type { Card } from './data/seed'
+import { useChallenge } from './lib/challenge'
 import type { FragResult } from './lib/progress'
+import type { Level } from './lib/text'
 import { pickNext, progressFor, useStore, type Scope } from './lib/store'
 
 type View = { name: 'home' } | { name: 'train'; scope: Scope; cardId: string; run: number }
@@ -11,6 +13,8 @@ type View = { name: 'home' } | { name: 'train'; scope: Scope; cardId: string; ru
 export function App() {
   const store = useStore()
   const { state, recordPass } = store
+  const challenge = useChallenge(store)
+  const { reportPass, syncCard, removeCard } = challenge
   const [view, setView] = useState<View>({ name: 'home' })
   const [editing, setEditing] = useState<{ card: Card | null } | null>(null)
 
@@ -26,7 +30,23 @@ export function App() {
     [state],
   )
   const exit = useCallback(() => setView({ name: 'home' }), [])
-  const finish = useCallback((results: FragResult[]) => recordPass(card!, results), [recordPass, card])
+  const finish = useCallback(
+    (results: FragResult[]) => {
+      const report = recordPass(card!, results)
+      reportPass(card!, report.progress)
+      return report
+    },
+    [recordPass, reportPass, card],
+  )
+  const saveCard = (saved: Card, startLevel?: Level) => {
+    store.saveCard(saved, startLevel)
+    syncCard(saved, state.cards.find((c) => c.id === saved.id))
+  }
+  const deleteCard = (id: string) => {
+    const deleted = state.cards.find((c) => c.id === id)
+    store.deleteCard(id)
+    if (deleted) removeCard(deleted)
+  }
   const repeat = useCallback(() => setView((v) => (v.name === 'train' ? { ...v, run: v.run + 1 } : v)), [])
   const next = useCallback(() => {
     if (!training) return
@@ -63,14 +83,19 @@ export function App() {
         onTogglePaused={store.togglePaused}
         onSettings={store.updateSettings}
         onRestore={store.restoreSeed}
+        boards={challenge.boards}
+        challengeError={challenge.error}
+        onJoin={challenge.join}
+        onLeave={challenge.leave}
         locked={editing !== null}
       />
       {editing && (
         <CardEditor
           card={editing.card}
           groups={groups}
-          onSave={store.saveCard}
-          onDelete={store.deleteCard}
+          me={state.player?.nick ?? null}
+          onSave={saveCard}
+          onDelete={deleteCard}
           onClose={() => setEditing(null)}
         />
       )}

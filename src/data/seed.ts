@@ -7,6 +7,8 @@ export interface Card {
   /** literal text to memorize; every line break starts a separate fragment */
   text: string
   paused?: boolean
+  /** nickname of whoever shared it; only community cards have one */
+  author?: string
 }
 
 const G1 = 'Dato personal y dato sensible'
