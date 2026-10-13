@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { CardEditor } from './components/CardEditor'
 import { Home } from './components/Home'
+import { Profile } from './components/Profile'
 import { Trainer } from './components/Trainer'
 import type { Card } from './data/seed'
 import { useChallenge } from './lib/challenge'
@@ -8,7 +9,7 @@ import type { FragResult } from './lib/progress'
 import type { Level } from './lib/text'
 import { pickNext, progressFor, useStore, type Scope } from './lib/store'
 
-type View = { name: 'home' } | { name: 'train'; scope: Scope; cardId: string; run: number }
+type View = { name: 'home' } | { name: 'profile' } | { name: 'train'; scope: Scope; cardId: string; run: number }
 
 export function App() {
   const store = useStore()
@@ -74,11 +75,16 @@ export function App() {
     )
   }
 
+  if (view.name === 'profile') {
+    return <Profile state={state} onBack={exit} onTrain={() => train({ kind: 'all' })} />
+  }
+
   return (
     <>
       <Home
         state={state}
         onTrain={train}
+        onProfile={() => setView({ name: 'profile' })}
         onEdit={(c) => setEditing({ card: c })}
         onTogglePaused={store.togglePaused}
         onSettings={store.updateSettings}

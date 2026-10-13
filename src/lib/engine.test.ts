@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { SEED_CARDS } from '../data/seed'
 import { advance, applyPass, freshProgress, judge, statusOf } from './progress'
+import { accuracyOf, bestStreak, dailySeries, totalsOf, wpmOf } from './stats'
 import { createSession, eventBetween, reveal, typeChar, type Session } from './session'
 import { hiddenWords, hintFor, splitFragments, type Level } from './text'
 
@@ -134,5 +135,30 @@ describe('progression', () => {
     const first = applyPass(freshProgress('x', 1), [clean], 0, 30000).progress
     const second = applyPass(first, [{ ...clean, errors: 4 }], 0, 20000).progress
     expect(second).toMatchObject({ typed: clean.typeable * 2, errors: 4, ms: 50000 })
+  })
+})
+
+describe('stats', () => {
+  const now = new Date(2026, 9, 13, 18).getTime()
+
+  it('averages speed and accuracy over everything typed', () => {
+    const totals = totalsOf([
+      { ...freshProgress('a', 1), passes: 2, typed: 300, errors: 10, ms: 60000 },
+      { ...freshProgress('b', 1), passes: 1, typed: 200, errors: 0, ms: 60000 },
+      freshProgress('c', 1),
+    ])
+    expect(totals).toEqual({ passes: 3, typed: 500, errors: 10, ms: 120000 })
+    expect(wpmOf(totals)).toBe(50)
+    expect(accuracyOf(totals)).toBeCloseTo(500 / 510)
+    expect(wpmOf(freshProgress('c', 1))).toBeNull()
+    expect(accuracyOf(freshProgress('c', 1))).toBeNull()
+  })
+
+  it('lays the days out up to today and finds the longest streak', () => {
+    const days = { '2026-10-13': 2, '2026-10-10': 1, '2026-10-09': 4, '2026-10-08': 1 }
+    const series = dailySeries(days, now, 3)
+    expect(series.map((p) => p.passes)).toEqual([1, 4, 1, 0, 0, 2])
+    expect(bestStreak(series)).toBe(3)
+    expect(dailySeries({}, now, 30)).toHaveLength(30)
   })
 })

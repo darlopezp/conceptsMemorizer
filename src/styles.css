@@ -348,11 +348,27 @@ kbd {
   transform-origin: left center;
 }
 
+.stats__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 40px;
+}
+
+.stats__head h2 {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .stats {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 12px;
-  margin-top: 48px;
+  margin-top: 8px;
 }
 
 .stats > div {
@@ -374,7 +390,7 @@ kbd {
 }
 
 .stats dd {
-  font-size: 40px;
+  font-size: clamp(28px, 3.4vw, 40px);
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: -0.03em;
@@ -988,6 +1004,433 @@ kbd {
   letter-spacing: 0;
 }
 
+/* ---------- profile ---------- */
+
+.profile__head {
+  padding: 40px 0 28px;
+}
+
+.profile__head h1 {
+  font-size: clamp(34px, 6vw, 56px);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  overflow-wrap: anywhere;
+}
+
+.profile__head p {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.profile__top {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.dial-card,
+.statcard,
+.panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.dial-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 20px;
+}
+
+.dial {
+  position: relative;
+  width: 196px;
+  aspect-ratio: 1;
+  flex: none;
+}
+
+.dial svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.dial line {
+  stroke: var(--line);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.dial line.is-lit {
+  stroke: var(--marker);
+  animation: fade 400ms ease backwards;
+}
+
+.dial.is-full line.is-lit {
+  stroke: var(--ok);
+}
+
+.dial circle {
+  fill: var(--bg);
+  stroke: var(--line);
+}
+
+.dial__text {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 2px;
+}
+
+.dial__text strong {
+  font-size: 46px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.dial__text small {
+  margin-left: 2px;
+  color: var(--muted);
+  font-size: 0.45em;
+  font-weight: 600;
+}
+
+.dial__text span {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dial-card__legend {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  max-width: 220px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.dial-card__legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dial-card__legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--slot);
+}
+
+.dial-card__legend .is-learning i { background: var(--marker); }
+.dial-card__legend .is-due i { background: var(--help); }
+.dial-card__legend .is-resting i { background: var(--ok); }
+
+.dial-card__legend strong {
+  margin-left: auto;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.statcards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.statcard {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 132px;
+  padding: 16px;
+  animation: rise 420ms var(--ease) backwards;
+}
+
+.statcard:nth-child(2) { animation-delay: 40ms; }
+.statcard:nth-child(3) { animation-delay: 80ms; }
+.statcard:nth-child(4) { animation-delay: 120ms; }
+.statcard:nth-child(5) { animation-delay: 160ms; }
+.statcard:nth-child(6) { animation-delay: 200ms; }
+
+.statcard__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.statcard__head i {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+}
+
+.statcard__head small {
+  margin-left: auto;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.statcard__value {
+  margin-top: auto;
+  font-size: clamp(28px, 3.2vw, 36px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.statcard__value small {
+  margin-left: 5px;
+  color: var(--muted);
+  font-size: 0.42em;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.statcard__bar {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.statcard__bar i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+  transform-origin: left;
+  animation: grow 700ms var(--ease) backwards;
+  animation-delay: 150ms;
+}
+
+.panel {
+  margin-top: 12px;
+  padding: 20px;
+}
+
+.panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px 24px;
+  margin-bottom: 14px;
+}
+
+.panel__head h2 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.panel__hint,
+.panel__foot {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.panel__foot {
+  margin-top: 12px;
+}
+
+.panel__empty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+}
+
+.chart {
+  --accent: var(--marker);
+  --hold: 0ms;
+}
+
+.chart svg {
+  display: block;
+  touch-action: none;
+  user-select: none;
+}
+
+.chart__main {
+  cursor: crosshair;
+}
+
+.chart__presets {
+  display: flex;
+  gap: 4px;
+}
+
+.chart__presets .board__tab i {
+  display: none;
+}
+
+.chart__grid {
+  stroke: var(--line);
+  stroke-dasharray: 2 5;
+}
+
+.chart__tick,
+.chart__tiptext {
+  fill: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart__tiptext {
+  fill: var(--text);
+}
+
+.chart__area {
+  animation: fade 240ms ease backwards;
+}
+
+.chart__line {
+  fill: none;
+  stroke: var(--marker);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.chart__cross {
+  stroke: var(--ghost);
+  stroke-dasharray: 3 3;
+}
+
+.chart__dot {
+  fill: var(--marker);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.chart__tip {
+  fill: var(--surface-2);
+  stroke: var(--line);
+}
+
+.chart__nav {
+  margin-top: 6px;
+}
+
+.chart__strip {
+  fill: none;
+  stroke: var(--ghost);
+  stroke-width: 1;
+}
+
+.chart__mask {
+  fill: var(--surface);
+  opacity: 0.72;
+}
+
+.chart__window {
+  fill: rgba(199, 0, 239, 0.1);
+  stroke: rgba(199, 0, 239, 0.6);
+  cursor: grab;
+  outline: none;
+}
+
+.chart__window:active {
+  cursor: grabbing;
+}
+
+.chart__window:focus-visible {
+  stroke: var(--marker-soft);
+  stroke-width: 2;
+}
+
+.chart__grip {
+  cursor: ew-resize;
+}
+
+.chart__grip rect:last-child {
+  fill: var(--marker);
+}
+
+.chart__ends {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding-right: 36px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.cardstats {
+  display: grid;
+}
+
+.cardstats__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px 80px 96px 96px;
+  align-items: center;
+  gap: 16px;
+  min-height: 48px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+
+.cardstats__row .num {
+  text-align: right;
+}
+
+.cardstats__row--head {
+  min-height: 0;
+  padding: 0 0 8px;
+  border-top: 0;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cardstats__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-weight: 600;
+}
+
+.cardstats__row em {
+  display: none;
+  margin-right: 8px;
+  color: var(--muted);
+  font-style: normal;
+}
+
 /* ---------- trainer ---------- */
 
 .trainer {
@@ -1512,7 +1955,15 @@ kbd {
 
 @media (max-width: 860px) {
   .ladder { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .profile__top { grid-template-columns: 1fr; }
+  .dial-card { flex-direction: row; justify-content: center; gap: 28px; }
+  .cardstats__row { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 6px; }
+  .cardstats__row--head { display: none; }
+  .cardstats__title { grid-column: span 2; }
+  .cardstats__row .bars { justify-self: end; }
+  .cardstats__row .num { font-size: 13px; text-align: left; }
+  .cardstats__row em { display: block; margin: 0; font-size: 11px; }
   .row__main { grid-template-columns: minmax(0, 1fr) auto; }
   .row__status { grid-column: 1 / -1; }
 }
@@ -1532,6 +1983,12 @@ kbd {
   .board__detail { display: none; }
   .board__row { grid-template-columns: 24px minmax(0, 1fr) minmax(48px, auto); }
   .settings__toggle span { display: none; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .statcards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .statcard__head { flex-wrap: wrap; row-gap: 2px; }
+  .statcard__head small { width: 100%; margin-left: 32px; }
+  .dial-card { flex-direction: column; }
+  .panel { padding: 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

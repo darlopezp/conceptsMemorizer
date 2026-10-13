@@ -12,12 +12,14 @@ import {
 } from '../lib/progress'
 import type { Boards } from '../lib/challenge'
 import { ONLINE } from '../lib/online'
+import { accuracyOf, totalsOf, wpmOf } from '../lib/stats'
 import { missingSeedCards, pickNext, progressFor, type AppState, type Scope, type Settings } from '../lib/store'
 import { LEVEL_HELP, LEVEL_NAMES, type Level } from '../lib/text'
 import { Challenge } from './Challenge'
 import { FragBars } from './FragBars'
-import { ClockIcon, FlameIcon, PauseIcon, PencilIcon, PlayIcon, PlusIcon } from './icons'
+import { ArrowRightIcon, ClockIcon, FlameIcon, PauseIcon, PencilIcon, PlayIcon, PlusIcon } from './icons'
 import { MarkerCycle } from './MarkerCycle'
+import { percentText } from './Profile'
 import { SettingsPanel } from './SettingsPanel'
 
 const LADDER: { level: Level; sample: string }[] = [
@@ -32,6 +34,7 @@ const LADDER: { level: Level; sample: string }[] = [
 interface Props {
   state: AppState
   onTrain: (scope: Scope) => void
+  onProfile: () => void
   onEdit: (card: Card | null) => void
   onTogglePaused: (id: string) => void
   onSettings: (patch: Partial<Settings>) => void
@@ -57,6 +60,7 @@ function statusLabel(status: CardStatus, p: CardProgress, now: number): string {
 export function Home({
   state,
   onTrain,
+  onProfile,
   onEdit,
   onTogglePaused,
   onSettings,
@@ -94,6 +98,9 @@ export function Home({
   const streak = dayStreak(state.days, now)
   const missing = missingSeedCards(state)
   const today = state.days[dayKey(now)] ?? 0
+  const totals = totalsOf(rows.map((r) => r.progress))
+  const wpm = wpmOf(totals)
+  const accuracy = accuracyOf(totals)
   const next = pickNext(state, { kind: 'all' }, now)
   const nextRow = rows.find((r) => r.card.id === next?.id)
 
@@ -188,6 +195,12 @@ export function Home({
           )}
         </div>
 
+        <div className="stats__head">
+          <h2>Tu progreso</h2>
+          <button className="btn btn--quiet" onClick={onProfile}>
+            Ver perfil <ArrowRightIcon size={16} />
+          </button>
+        </div>
         <dl className="stats">
           <div>
             <dt>Dominio</dt>
@@ -210,6 +223,20 @@ export function Home({
           <div>
             <dt>Pasadas hoy</dt>
             <dd>{today}</dd>
+          </div>
+          <div>
+            <dt>Velocidad</dt>
+            <dd>
+              {wpm ?? '–'}
+              <small> ppm</small>
+            </dd>
+          </div>
+          <div>
+            <dt>Precisión</dt>
+            <dd>
+              {accuracy === null ? '–' : percentText(accuracy)}
+              <small>%</small>
+            </dd>
           </div>
         </dl>
       </header>

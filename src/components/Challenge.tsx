@@ -1,14 +1,13 @@
 import { useMemo, useState } from 'react'
 import type { Boards } from '../lib/challenge'
 import type { Board, Player, Rank } from '../lib/online'
+import { RANK_MIN_TYPED } from '../lib/stats'
 import { Marker, useMarkerCycle } from './MarkerCycle'
 
 const TOP = 10
 const MIN_PASSWORD = 4
 /** how long each ranking stays on screen before the next one takes over */
 const HOLD_MS = 5000
-/** characters a player must have typed before their averages are steady enough to rank */
-const MIN_TYPED = 500
 
 type Metric = 'points' | 'mastered' | 'passes' | 'wpm' | 'accuracy'
 
@@ -57,7 +56,7 @@ function buildSlides(boards: Boards | null, me?: string): Slide[] {
   for (const board of BOARDS) {
     for (const metric of METRICS) {
       const ranked = boards[board.id]
-        .filter((r) => metric.id === 'points' || (r[metric.id] > 0 && (!metric.average || r.typed >= MIN_TYPED)))
+        .filter((r) => metric.id === 'points' || (r[metric.id] > 0 && (!metric.average || r.typed >= RANK_MIN_TYPED)))
         // the server already sorts by points, which also breaks ties in the other figures
         .sort((a, b) => b[metric.id] - a[metric.id])
         .map((rank, i) => ({ rank, place: i + 1 }))
@@ -193,7 +192,7 @@ function Leaderboard({ boards, me }: { boards: Boards | null; me?: string }) {
           </h3>
           <p className="board__scope">
             {slide.board.title} · {slide.board.hint}
-            {slide.metric.average && ` · desde ${MIN_TYPED} caracteres escritos`}
+            {slide.metric.average && ` · desde ${RANK_MIN_TYPED} caracteres escritos`}
           </p>
         </div>
         {slides.length > 1 && (
