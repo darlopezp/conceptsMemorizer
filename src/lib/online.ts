@@ -19,6 +19,9 @@ export interface Score {
   mastery: number
   mastered: boolean
   passes: number
+  typed: number
+  errors: number
+  ms: number
 }
 
 export interface Rank {
@@ -26,6 +29,12 @@ export interface Rank {
   points: number
   mastered: number
   passes: number
+  /** average words per minute over every timed pass */
+  wpm: number
+  /** 0..100, with one decimal */
+  accuracy: number
+  /** characters behind those two averages */
+  typed: number
 }
 
 export type Board = 'base' | 'community'
@@ -83,11 +92,12 @@ export function fetchCommunityCards(): Promise<Card[]> {
   return request<Card[]>('community_cards?select=id,title,source,group,text,author&order=created_at.asc')
 }
 
-export function fetchBoard(board: Board): Promise<Rank[]> {
-  return request<Rank[]>(
-    `leaderboard?select=nick,points,mastered,passes&community=eq.${board === 'community'}` +
-      '&order=points.desc,mastered.desc,updated_at.asc&limit=100',
+export async function fetchBoard(board: Board): Promise<Rank[]> {
+  // no column list, so a database that has not run the speed and accuracy migration still answers
+  const rows = await request<Rank[]>(
+    `leaderboard?community=eq.${board === 'community'}&order=points.desc,mastered.desc,updated_at.asc&limit=100`,
   )
+  return rows.map((r) => ({ ...r, wpm: r.wpm ?? 0, accuracy: r.accuracy ?? 0, typed: r.typed ?? 0 }))
 }
 
 export function errorMessage(e: unknown): string {

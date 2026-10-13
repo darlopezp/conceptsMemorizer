@@ -86,7 +86,15 @@ export function competes(card: Card): boolean {
 }
 
 export function scoreOf(card: Card, progress: CardProgress): Score {
-  return { card_id: card.id, mastery: mastery(progress), mastered: progress.due !== null, passes: progress.passes }
+  return {
+    card_id: card.id,
+    mastery: mastery(progress),
+    mastered: progress.due !== null,
+    passes: progress.passes,
+    typed: progress.typed ?? 0,
+    errors: progress.errors ?? 0,
+    ms: progress.ms ?? 0,
+  }
 }
 
 /** Everything this browser has earned so far, to bring the server up to date in one go. */
@@ -151,9 +159,9 @@ export function useStore() {
   const latest = useRef(state)
   latest.current = state
 
-  const recordPass = useCallback((card: Card, results: FragResult[]): PassReport => {
+  const recordPass = useCallback((card: Card, results: FragResult[], ms: number): PassReport => {
     const now = Date.now()
-    const report = applyPass(progressFor(latest.current, card), results, now)
+    const report = applyPass(progressFor(latest.current, card), results, now, ms)
     const key = dayKey(now)
     setState((prev) => ({
       ...prev,

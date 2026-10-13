@@ -7,24 +7,45 @@ const TOP = 10
 const MIN_PASSWORD = 4
 /** how long each ranking stays on screen before the next one takes over */
 const HOLD_MS = 5000
+/** characters a player must have typed before their averages are steady enough to rank */
+const MIN_TYPED = 500
 
-type Metric = 'points' | 'mastered' | 'passes'
+type Metric = 'points' | 'mastered' | 'passes' | 'wpm' | 'accuracy'
 
 const BOARDS: { id: Board; title: string; hint: string }[] = [
   { id: 'base', title: 'Global', hint: 'tarjetas base' },
   { id: 'community', title: 'Comunidad', hint: 'tarjetas compartidas' },
 ]
 
-const METRICS: { id: Metric; tab: string; word: string }[] = [
-  { id: 'points', tab: 'Puntos', word: 'puntos' },
-  { id: 'mastered', tab: 'De memoria', word: 'tarjetas de memoria' },
-  { id: 'passes', tab: 'Pasadas', word: 'pasadas' },
+interface MetricInfo {
+  id: Metric
+  tab: string
+  word: string
+  /** the other figures shown next to the nickname */
+  beside: Metric[]
+  unit?: string
+  /** averages only rank players with enough typing behind them */
+  average?: boolean
+}
+
+const METRICS: MetricInfo[] = [
+  { id: 'points', tab: 'Puntos', word: 'puntos', beside: ['mastered', 'passes'] },
+  { id: 'mastered', tab: 'De memoria', word: 'tarjetas de memoria', beside: ['points', 'passes'] },
+  { id: 'passes', tab: 'Pasadas', word: 'pasadas', beside: ['points', 'mastered'] },
+  { id: 'wpm', tab: 'Velocidad', word: 'velocidad media', beside: ['accuracy', 'passes'], unit: 'ppm', average: true },
+  { id: 'accuracy', tab: 'Precisión', word: 'precisión', beside: ['wpm', 'passes'], unit: '%', average: true },
 ]
+
+const percent = new Intl.NumberFormat('es', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+
+function figure(rank: Rank, metric: Metric): string {
+  return metric === 'accuracy' ? percent.format(rank.accuracy) : String(rank[metric])
+}
 
 interface Slide {
   key: string
   board: (typeof BOARDS)[number]
-  metric: (typeof METRICS)[number]
+  metric: MetricInfo
   rows: { rank: Rank; place: number }[]
   max: number
 }
@@ -36,7 +57,7 @@ function buildSlides(boards: Boards | null, me?: string): Slide[] {
   for (const board of BOARDS) {
     for (const metric of METRICS) {
       const ranked = boards[board.id]
-        .filter((r) => metric.id === 'points' || r[metric.id] > 0)
+        .filter((r) => metric.id === 'points' || (r[metric.id] > 0 && (!metric.average || r.typed >= MIN_TYPED)))
         // the server already sorts by points, which also breaks ties in the other figures
         .sort((a, b) => b[metric.id] - a[metric.id])
         .map((rank, i) => ({ rank, place: i + 1 }))
@@ -51,15 +72,15 @@ function buildSlides(boards: Boards | null, me?: string): Slide[] {
   return slides
 }
 
-function detail(rank: Rank, metric: Metric): string {
+function detail(rank: Rank, metric: MetricInfo): string {
   const parts: Record<Metric, string> = {
     points: `${rank.points} pts`,
     mastered: `${rank.mastered} de memoria`,
     passes: `${rank.passes} ${rank.passes === 1 ? 'pasada' : 'pasadas'}`,
+    wpm: `${rank.wpm} ppm`,
+    accuracy: `${figure(rank, 'accuracy')}%`,
   }
-  return METRICS.filter((m) => m.id !== metric)
-    .map((m) => parts[m.id])
-    .join(' · ')
+  return metric.beside.map((id) => parts[id]).join(' · ')
 }
 
 interface Props {
@@ -172,6 +193,7 @@ function Leaderboard({ boards, me }: { boards: Boards | null; me?: string }) {
           </h3>
           <p className="board__scope">
             {slide.board.title} · {slide.board.hint}
+            {slide.metric.average && ` · desde ${MIN_TYPED} caracteres escritos`}
           </p>
         </div>
         {slides.length > 1 && (
@@ -214,8 +236,11 @@ function Leaderboard({ boards, me }: { boards: Boards | null; me?: string }) {
               {rank.nick}
               {rank.nick === me && <span className="tag tag--author">tú</span>}
             </span>
-            <span className="board__detail">{detail(rank, slide.metric.id)}</span>
-            <strong>{rank[slide.metric.id]}</strong>
+            <span className="board__detail">{detail(rank, slide.metric)}</span>
+            <strong>
+              {figure(rank, slide.metric.id)}
+              {slide.metric.unit && <small>{slide.metric.unit}</small>}
+            </strong>
           </li>
         ))}
       </ol>

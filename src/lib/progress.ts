@@ -15,6 +15,10 @@ export interface CardProgress {
   due: number | null
   lastSeen: number
   passes: number
+  /** characters typed, wrong keys and time spent over every pass, for the speed and accuracy averages */
+  typed?: number
+  errors?: number
+  ms?: number
 }
 
 export interface FragResult {
@@ -78,7 +82,7 @@ export interface PassReport {
   mastered: boolean
 }
 
-export function applyPass(progress: CardProgress, results: FragResult[], now: number): PassReport {
+export function applyPass(progress: CardProgress, results: FragResult[], now: number, ms = 0): PassReport {
   const outcomes = results.map(judge)
   const frags = progress.frags.map((f, i) => advance(f, outcomes[i]))
   const mastered =
@@ -91,8 +95,20 @@ export function applyPass(progress: CardProgress, results: FragResult[], now: nu
     stage = 0
     due = null
   }
+  const typed = results.reduce((acc, r) => acc + r.typeable, 0)
+  const errors = results.reduce((acc, r) => acc + r.errors, 0)
   return {
-    progress: { ...progress, frags, stage, due, lastSeen: now, passes: progress.passes + 1 },
+    progress: {
+      ...progress,
+      frags,
+      stage,
+      due,
+      lastSeen: now,
+      passes: progress.passes + 1,
+      typed: (progress.typed ?? 0) + typed,
+      errors: (progress.errors ?? 0) + errors,
+      ms: (progress.ms ?? 0) + ms,
+    },
     outcomes,
     mastered,
   }

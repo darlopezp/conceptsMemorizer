@@ -31,8 +31,8 @@ export function App() {
   )
   const exit = useCallback(() => setView({ name: 'home' }), [])
   const finish = useCallback(
-    (results: FragResult[]) => {
-      const report = recordPass(card!, results)
+    (results: FragResult[], ms: number) => {
+      const report = recordPass(card!, results, ms)
       reportPass(card!, report.progress)
       return report
     },

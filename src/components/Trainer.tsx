@@ -28,7 +28,7 @@ interface Props {
   strict: boolean
   sound: SoundSettings
   onToggleSound: () => void
-  onFinish: (results: FragResult[]) => PassReport
+  onFinish: (results: FragResult[], ms: number) => PassReport
   onNext: () => void
   onRepeat: () => void
   onExit: () => void
@@ -54,12 +54,12 @@ export function Trainer({ card, progress, strict, sound, onToggleSound, onFinish
   useEffect(() => {
     if (session.done && !reported.current) {
       reported.current = true
-      const result = onFinish(session.results)
+      const result = onFinish(session.results, (session.endedAt ?? 0) - (session.startedAt ?? 0))
       setReport(result)
       const mood = result.mastered ? 'mastered' : result.outcomes.includes('up') ? 'up' : 'steady'
       playSound('finish', latestSound.current, { mood })
     }
-  }, [session.done, session.results, onFinish])
+  }, [session.done, session.results, session.endedAt, session.startedAt, onFinish])
 
   /** Advances the session outside of React's updater so each key can sound the moment it lands. */
   const step = useCallback((change: (s: Session) => Session) => {

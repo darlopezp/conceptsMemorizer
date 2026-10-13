@@ -129,4 +129,10 @@ describe('progression', () => {
     expect(p.due).toBeNull()
     expect(p.frags.map((f) => f.level)).toEqual([6, 4])
   })
+
+  it('adds up what was typed, missed and timed across passes', () => {
+    const first = applyPass(freshProgress('x', 1), [clean], 0, 30000).progress
+    const second = applyPass(first, [{ ...clean, errors: 4 }], 0, 20000).progress
+    expect(second).toMatchObject({ typed: clean.typeable * 2, errors: 4, ms: 50000 })
+  })
 })

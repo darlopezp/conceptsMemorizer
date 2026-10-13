@@ -12,6 +12,7 @@
   --ok: #3ddc97;
   --err: #ff5a5f;
   --help: #ffb547;
+  --speed: #4cc9f0;
 
   --font-display: 'Bricolage Grotesque Variable', 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono Variable', 'Cascadia Code', Consolas, monospace;
@@ -782,6 +783,8 @@ kbd {
 
 .board[data-metric='mastered'] { --accent: var(--ok); }
 .board[data-metric='passes'] { --accent: var(--help); }
+.board[data-metric='wpm'] { --accent: var(--speed); }
+.board[data-metric='accuracy'] { --accent: var(--marker-soft); }
 
 .board__head {
   display: flex;
@@ -975,6 +978,14 @@ kbd {
   font-weight: 800;
   letter-spacing: -0.02em;
   text-align: right;
+}
+
+.board__row strong small {
+  margin-left: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 /* ---------- trainer ---------- */
